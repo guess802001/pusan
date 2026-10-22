@@ -11,6 +11,9 @@
     <!-- Noto Serif KR & Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- 카카오 JavaScript SDK -->
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" integrity="sha384-TiC1Dbgw2M8hbe925f5kRiUBu2fbeqeLU4gX8SuN9gZuBZpDMNiB1Dda9142fJ0E" crossorigin="anonymous"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -85,6 +88,48 @@
             background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
         }
+
+        /* 스마트폰 모바일 화면(768px 이하) 대응 스타일 */
+        @media (max-width: 768px) {
+            header {
+                display: none !important; /* 모바일 접속 시 헤더 숨김 */
+            }
+
+            main {
+                padding: 0 !important;
+            }
+
+            .admin-form-container {
+                display: none !important; /* 모바일 접속 시 작성 폼 숨김 */
+            }
+
+            .phone-preview-wrapper {
+                position: static !important;
+                width: 100% !important;
+            }
+
+            .phone-preview-wrapper .text-xs {
+                display: none !important; /* "실시간 미리보기" 문구 숨김 */
+            }
+
+            .phone-frame {
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                width: 100vw !important;
+                min-height: 100vh !important;
+                height: auto !important;
+            }
+
+            .phone-notch {
+                display: none !important; /* 스마트폰 노치 숨김 */
+            }
+
+            #preview-container {
+                padding-top: 2rem !important;
+                padding-bottom: 3rem !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
@@ -112,7 +157,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
             <!-- LEFT FORM CONTAINER (Lg: 7 cols) -->
-            <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="admin-form-container lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 
                 <!-- Form Navigation Tabs -->
                 <div class="flex border-b border-slate-200 bg-slate-50 text-sm font-medium overflow-x-auto">
@@ -288,7 +333,7 @@
 
 
             <!-- RIGHT SMARTPHONE PREVIEW (Lg: 5 cols) -->
-            <div class="lg:col-span-5 flex flex-col items-center justify-center sticky top-20">
+            <div class="phone-preview-wrapper lg:col-span-5 flex flex-col items-center justify-center sticky top-20">
                 <div class="text-xs font-semibold text-slate-500 mb-2 flex items-center space-x-1">
                     <i class="fa-solid fa-mobile-screen-button"></i>
                     <span>실시간 스마트폰 미리보기</span>
@@ -462,87 +507,80 @@
         <i class="fa-solid fa-circle-check text-emerald-400" id="toast-icon"></i>
         <span id="toast-message">내용이 복사되었습니다.</span>
     </div>
+
     <script>
-  // 1. 카카오 JavaScript SDK 초기화
-  // 'YOUR_JAVASCRIPT_KEY' 부분을 카카오 개발자 센터에서 발급받은 'JavaScript 키'로 교체하세요.
-  Kakao.init('58a1eed30cf45bb1138fd58b2a158ffd');
-  
-  // SDK 초기화 여부 확인 (디버깅용)
-  console.log('Kakao SDK Initialized:', Kakao.isInitialized());
+      // 1. 카카오 JavaScript SDK 초기화 (JavaScript 키 적용)
+      Kakao.init('58a1eed30cf45bb1138fd58b2a158ffd');
+      
+      console.log('Kakao SDK Initialized:', Kakao.isInitialized());
 
-  // 2. 카카오톡 공유 실행 함수
-  function simulateKakaoShare() {
-    // SDK 초기화 확인
-    if (!Kakao.isInitialized()) {
-      alert('카카오 SDK가 초기화되지 않았습니다. JavaScript 키를 확인해 주세요.');
-      return;
-    }
+      // 2. 카카오톡 공유 실행 함수
+      function simulateKakaoShare() {
+        if (!Kakao.isInitialized()) {
+          alert('카카오 SDK가 초기화되지 않았습니다. JavaScript 키를 확인해 주세요.');
+          return;
+        }
 
-    // 모달창에 입력된 제목 및 내용 가져오기
-    const titleElement = document.getElementById('modal-kakao-title');
-    const subElement = document.getElementById('modal-kakao-sub');
+        const titleElement = document.getElementById('modal-kakao-title');
+        const subElement = document.getElementById('modal-kakao-sub');
 
-    const titleText = titleElement ? titleElement.innerText : '[부고] 삼가 고인의 명복을 빕니다.';
-    const subText = subElement ? subElement.innerText : '모바일 부고장을 확인하시려면 아래 버튼을 눌러주세요.';
+        const titleText = titleElement ? titleElement.innerText : '[부고] 삼가 고인의 명복을 빕니다.';
+        const subText = subElement ? subElement.innerText : '모바일 부고장을 확인하시려면 아래 버튼을 눌러주세요.';
 
-    // 카카오톡 메시지 보내기 (Feed 타입)
-    Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: titleText,
-        description: subText,
-        imageUrl: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=800', // 카카오 카드 대표 이미지
-        link: {
-          mobileWebUrl: window.location.href, // Vercel 배포 URL이 자동으로 연결됩니다.
-          webUrl: window.location.href,
-        },
-      },
-      buttons: [
-        {
-          title: '부고장 확인하기',
-          link: {
-            mobileWebUrl: window.location.href,
-            webUrl: window.location.href,
+        Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: titleText,
+            description: subText,
+            imageUrl: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=800',
+            link: {
+              mobileWebUrl: window.location.href,
+              webUrl: window.location.href,
+            },
           },
-        },
-      ],
-    });
-  }
+          buttons: [
+            {
+              title: '부고장 확인하기',
+              link: {
+                mobileWebUrl: window.location.href,
+                webUrl: window.location.href,
+              },
+            },
+          ],
+        });
+      }
 
-  // 3. 문자용 부고 텍스트 복사 함수
-  function copyNoticeText() {
-    const textContent = document.getElementById('modal-text-content');
-    if (!textContent) return;
+      // 3. 문자용 부고 텍스트 복사 함수
+      function copyNoticeText() {
+        const textContent = document.getElementById('modal-text-content');
+        if (!textContent) return;
 
-    // 클립보드 복사
-    navigator.clipboard.writeText(textContent.value).then(() => {
-      showToast('문자용 부고 텍스트가 복사되었습니다.');
-    }).catch(err => {
-      // 구형 브라우저 호환용 복사 처리
-      textContent.select();
-      document.execCommand('copy');
-      showToast('문자용 부고 텍스트가 복사되었습니다.');
-    });
-  }
+        navigator.clipboard.writeText(textContent.value).then(() => {
+          showToast('문자용 부고 텍스트가 복사되었습니다.');
+        }).catch(err => {
+          textContent.select();
+          document.execCommand('copy');
+          showToast('문자용 부고 텍스트가 복사되었습니다.');
+        });
+      }
 
-  // 4. 하단 알림 토스트 메시지 표시 함수
-  function showToast(message) {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
+      // 4. 하단 알림 토스트 메시지 표시 함수
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
 
-    if (!toast || !toastMessage) return;
+        if (!toast || !toastMessage) return;
 
-    toastMessage.innerText = message;
-    toast.classList.remove('hidden');
-    toast.classList.add('flex');
+        toastMessage.innerText = message;
+        toast.classList.remove('hidden');
+        toast.classList.add('flex');
 
-    // 3초 후 토스트 숨기기
-    setTimeout(() => {
-      toast.classList.remove('flex');
-      toast.classList.add('hidden');
-    }, 3000);
-  }
-</script>
+        setTimeout(() => {
+          toast.classList.remove('flex');
+          toast.classList.add('hidden');
+        }, 3000);
+      }
+    </script>
     <script>
         // Default State Data
         const state = {
@@ -612,7 +650,6 @@
             updatePreview();
         };
 
-        // Initialize form controls from state
         function initFormValues() {
             document.getElementById('input-deceased-name').value = state.deceased.name;
             document.getElementById('input-deceased-age').value = state.deceased.age;
@@ -630,7 +667,6 @@
             document.getElementById('toggle-wreath').checked = state.settings.showWreath;
         }
 
-        // Bind dynamic input listeners
         function bindInputEvents() {
             const inputs = document.querySelectorAll('input, textarea');
             inputs.forEach(input => {
@@ -648,7 +684,6 @@
             });
         }
 
-        // Sync Form Input Data to State
         function updateStateFromForm() {
             state.deceased.name = document.getElementById('input-deceased-name').value || "OOO";
             state.deceased.age = document.getElementById('input-deceased-age').value || "00";
@@ -662,7 +697,6 @@
             state.funeral.departure = document.getElementById('input-funeral-departure').value;
             state.funeral.burial = document.getElementById('input-burial-place').value || "";
 
-            // Sync Mourners
             const mournerRows = document.querySelectorAll('.mourner-row');
             state.mourners = [];
             mournerRows.forEach(row => {
@@ -674,7 +708,6 @@
                 }
             });
 
-            // Sync Accounts
             const accountRows = document.querySelectorAll('.account-row');
             state.accounts = [];
             accountRows.forEach(row => {
@@ -689,7 +722,6 @@
             updatePreview();
         }
 
-        // Dynamic Mourners Input Controls
         function renderMournersInput() {
             const container = document.getElementById('mourner-container');
             container.innerHTML = '';
@@ -721,7 +753,6 @@
             updatePreview();
         }
 
-        // Dynamic Accounts Input Controls
         function renderAccountInputs() {
             const container = document.getElementById('account-inputs-container');
             container.innerHTML = '';
@@ -755,7 +786,6 @@
             updatePreview();
         }
 
-        // Update Real-time Smartphone Preview Content
         function updatePreview() {
             document.getElementById('pv-deceased-name').textContent = state.deceased.name;
             document.getElementById('pv-deceased-age').textContent = state.deceased.age ? `(향년 ${state.deceased.age}세)` : "";
@@ -770,7 +800,6 @@
             document.getElementById('pv-departure-time').textContent = formatDateString(state.funeral.departure) || "-";
             document.getElementById('pv-burial-place').textContent = state.funeral.burial || "-";
 
-            // Render Mourners in Preview
             const pvMournersList = document.getElementById('pv-mourners-list');
             pvMournersList.innerHTML = '';
             state.mourners.forEach(m => {
@@ -784,7 +813,6 @@
                 pvMournersList.appendChild(item);
             });
 
-            // Account Toggle & Render
             const accountSec = document.getElementById('pv-account-section');
             const accountsList = document.getElementById('pv-accounts-list');
             accountsList.innerHTML = '';
@@ -810,7 +838,6 @@
                 accountSec.classList.add('hidden');
             }
 
-            // Wreath Toggle
             const wreathSec = document.getElementById('pv-wreath-section');
             if (state.settings.showWreath) {
                 wreathSec.classList.remove('hidden');
@@ -819,12 +846,10 @@
             }
         }
 
-        // Change Theme Styling in Preview Frame
         function changeTheme(themeKey) {
             state.settings.theme = themeKey;
             const pvContainer = document.getElementById('preview-container');
 
-            // Reset labels highlight
             document.querySelectorAll('[id^="theme-label-"]').forEach(el => {
                 el.classList.remove('border-amber-500', 'shadow-md');
                 el.classList.add('border-slate-200');
@@ -836,7 +861,6 @@
                 activeLabel.classList.remove('border-slate-200');
             }
 
-            // Apply style classes
             if (themeKey === 'dark') {
                 pvContainer.className = "w-full h-full pt-8 pb-6 px-4 preview-scroll overflow-y-auto font-serif transition-colors duration-300 bg-zinc-900 text-zinc-100";
             } else if (themeKey === 'beige') {
@@ -846,7 +870,6 @@
             }
         }
 
-        // Map Redirect Simulation
         function openMap(type) {
             const query = encodeURIComponent(state.funeral.hall + " " + state.funeral.address);
             let url = "";
@@ -858,7 +881,6 @@
             window.open(url, '_blank');
         }
 
-        // Tab Switching Logic
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
@@ -873,7 +895,6 @@
             activeBtn.classList.remove('border-transparent', 'text-slate-500');
         }
 
-        // Share Modal & Copy Management
         function openShareModal() {
             document.getElementById('share-modal').classList.remove('hidden');
             document.getElementById('share-modal').classList.add('flex');
@@ -881,9 +902,10 @@
             document.getElementById('modal-kakao-title').textContent = `[부고] 故 ${state.deceased.name} 님 별세`;
             document.getElementById('modal-kakao-sub').textContent = `빈소: ${state.funeral.hall} ${state.funeral.room}`;
 
-            // Build Announcement Text
             let mournersText = state.mourners.map(m => ` - ${m.relation}: ${m.name}`).join('\n');
             let accountsText = state.settings.showAccount ? state.accounts.map(a => ` - ${a.bank} ${a.number} (예금주: ${a.holder})`).join('\n') : " - 계좌 생략";
+
+            const currentUrl = window.location.href;
 
             const noticeText = `[부고 알림]
 
@@ -904,7 +926,7 @@ ${mournersText}
 ${accountsText}
 
 ■ 모바일 부고장 링크:
-https://obituary-notice.example.com/live?id=20261022`;
+${currentUrl}`;
 
             document.getElementById('modal-text-content').value = noticeText;
         }
@@ -914,22 +936,12 @@ https://obituary-notice.example.com/live?id=20261022`;
             document.getElementById('share-modal').classList.remove('flex');
         }
 
-        function copyNoticeText() {
-            const textarea = document.getElementById('modal-text-content');
-            copyToClipboard(textarea.value, "부고장 문자가 클립보드에 복사되었습니다.");
-        }
-
-        function simulateKakaoShare() {
-            showToast("카카오톡 부고 카드가 전송되었습니다. (시뮬레이션)");
-        }
-
         function copyToClipboard(text, successMsg) {
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(() => {
                     showToast(successMsg);
                 });
             } else {
-                // Fallback for iFrame restrictions
                 const textarea = document.createElement("textarea");
                 textarea.value = text;
                 textarea.style.position = "fixed";
@@ -945,17 +957,6 @@ https://obituary-notice.example.com/live?id=20261022`;
                 }
                 document.body.removeChild(textarea);
             }
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-message');
-            toastMsg.textContent = msg;
-            toast.classList.remove('hidden');
-
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
         }
     </script>
 </body>
