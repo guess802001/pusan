@@ -462,7 +462,87 @@
         <i class="fa-solid fa-circle-check text-emerald-400" id="toast-icon"></i>
         <span id="toast-message">내용이 복사되었습니다.</span>
     </div>
+    <script>
+  // 1. 카카오 JavaScript SDK 초기화
+  // 'YOUR_JAVASCRIPT_KEY' 부분을 카카오 개발자 센터에서 발급받은 'JavaScript 키'로 교체하세요.
+  Kakao.init('https://pusan-i51y.vercel.app');
+  
+  // SDK 초기화 여부 확인 (디버깅용)
+  console.log('Kakao SDK Initialized:', Kakao.isInitialized());
 
+  // 2. 카카오톡 공유 실행 함수
+  function simulateKakaoShare() {
+    // SDK 초기화 확인
+    if (!Kakao.isInitialized()) {
+      alert('카카오 SDK가 초기화되지 않았습니다. JavaScript 키를 확인해 주세요.');
+      return;
+    }
+
+    // 모달창에 입력된 제목 및 내용 가져오기
+    const titleElement = document.getElementById('modal-kakao-title');
+    const subElement = document.getElementById('modal-kakao-sub');
+
+    const titleText = titleElement ? titleElement.innerText : '[부고] 삼가 고인의 명복을 빕니다.';
+    const subText = subElement ? subElement.innerText : '모바일 부고장을 확인하시려면 아래 버튼을 눌러주세요.';
+
+    // 카카오톡 메시지 보내기 (Feed 타입)
+    Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: titleText,
+        description: subText,
+        imageUrl: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=800', // 카카오 카드 대표 이미지
+        link: {
+          mobileWebUrl: window.location.href, // Vercel 배포 URL이 자동으로 연결됩니다.
+          webUrl: window.location.href,
+        },
+      },
+      buttons: [
+        {
+          title: '부고장 확인하기',
+          link: {
+            mobileWebUrl: window.location.href,
+            webUrl: window.location.href,
+          },
+        },
+      ],
+    });
+  }
+
+  // 3. 문자용 부고 텍스트 복사 함수
+  function copyNoticeText() {
+    const textContent = document.getElementById('modal-text-content');
+    if (!textContent) return;
+
+    // 클립보드 복사
+    navigator.clipboard.writeText(textContent.value).then(() => {
+      showToast('문자용 부고 텍스트가 복사되었습니다.');
+    }).catch(err => {
+      // 구형 브라우저 호환용 복사 처리
+      textContent.select();
+      document.execCommand('copy');
+      showToast('문자용 부고 텍스트가 복사되었습니다.');
+    });
+  }
+
+  // 4. 하단 알림 토스트 메시지 표시 함수
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+
+    if (!toast || !toastMessage) return;
+
+    toastMessage.innerText = message;
+    toast.classList.remove('hidden');
+    toast.classList.add('flex');
+
+    // 3초 후 토스트 숨기기
+    setTimeout(() => {
+      toast.classList.remove('flex');
+      toast.classList.add('hidden');
+    }, 3000);
+  }
+</script>
     <script>
         // Default State Data
         const state = {
@@ -824,7 +904,7 @@ ${mournersText}
 ${accountsText}
 
 ■ 모바일 부고장 링크:
-https://obituary-notice.example.com/live?id=20261022`;
+https://pusan-i51y.vercel.app`;
 
             document.getElementById('modal-text-content').value = noticeText;
         }
