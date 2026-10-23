@@ -3,961 +3,407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>모바일 부고장 제작 서비스</title>
-    <!-- Tailwind CSS -->
+    <title>모바일 부고장 작성기</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Noto Serif KR & Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- 카카오 JavaScript SDK -->
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" integrity="sha384-TiC1Dbgw2M8hbe925f5kRiUBu2fbeqeLU4gX8SuN9gZuBZpDMNiB1Dda9142fJ0E" crossorigin="anonymous"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        serif: ['"Noto Serif KR"', 'serif'],
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        darkTheme: {
-                            bg: '#121212',
-                            card: '#1e1e1e',
-                            text: '#e0e0e0',
-                            accent: '#c5a880',
-                            sub: '#a0a0a0'
-                        },
-                        beigeTheme: {
-                            bg: '#f9f6f0',
-                            card: '#ffffff',
-                            text: '#2c2c2c',
-                            accent: '#8c6d46',
-                            sub: '#706e6b'
-                        },
-                        whiteTheme: {
-                            bg: '#f3f4f6',
-                            card: '#ffffff',
-                            text: '#1f2937',
-                            accent: '#374151',
-                            sub: '#6b7280'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Html2Canvas for downloading preview as image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* Custom scrollbar for preview frame */
-        .preview-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .preview-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .preview-scroll::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
-            border-radius: 2px;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
         
-        /* Smartphone Frame mockup */
-        .phone-frame {
-            border: 12px solid #2d3748;
-            border-radius: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f3f4f6;
         }
-        
-        .phone-notch {
-            width: 140px;
-            height: 20px;
-            background-color: #2d3748;
-            border-bottom-left-radius: 12px;
-            border-bottom-right-radius: 12px;
-            margin: 0 auto;
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
+        .font-serif-kr {
+            font-family: 'Noto Serif KR', serif;
         }
-
-        /* Modal custom styles */
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
+        /* Custom Scrollbar for form panel */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
-
-        /* 스마트폰 모바일 화면(768px 이하) 대응 스타일 */
-        @media (max-width: 768px) {
-            header {
-                display: none !important; /* 모바일 접속 시 헤더 숨김 */
-            }
-
-            main {
-                padding: 0 !important;
-            }
-
-            .admin-form-container {
-                display: none !important; /* 모바일 접속 시 작성 폼 숨김 */
-            }
-
-            .phone-preview-wrapper {
-                position: static !important;
-                width: 100% !important;
-            }
-
-            .phone-preview-wrapper .text-xs {
-                display: none !important; /* "실시간 미리보기" 문구 숨김 */
-            }
-
-            .phone-frame {
-                border: none !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                width: 100vw !important;
-                min-height: 100vh !important;
-                height: auto !important;
-            }
-
-            .phone-notch {
-                display: none !important; /* 스마트폰 노치 숨김 */
-            }
-
-            #preview-container {
-                padding-top: 2rem !important;
-                padding-bottom: 3rem !important;
-            }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+<body class="text-gray-800 antialiased min-h-screen flex flex-col justify-between">
 
-    <!-- Header Navigation -->
-    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-ribbon text-amber-200 text-2xl"></i>
-                <span class="font-serif font-bold text-lg sm:text-xl tracking-wide">더빅 부고장 제작소</span>
-            </div>
+    <!-- Header -->
+    <header class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <button id="btn-share-modal" onclick="openShareModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 shadow">
-                    <i class="fa-solid fa-share-nodes"></i>
-                    <span class="hidden sm:inline">부고장 공유/전송</span>
-                    <span class="sm:hidden">공유</span>
-                </button>
+                <i data-lucide="flower-2" class="w-6 h-6 text-amber-200"></i>
+                <h1 class="text-xl font-bold font-serif-kr tracking-wide">스마트 모바일 부고장 생성기</h1>
             </div>
+            <button onclick="downloadPreview()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs md:text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>부고장 이미지 저장</span>
+            </button>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <!-- Responsive Grid: Left Input Form, Right Phone Preview -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Input Form Panel -->
+        <section class="lg:col-span-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
+            <div>
+                <h2 class="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-gray-100 flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-5 h-5 text-amber-600"></i>
+                    부고 정보 입력
+                </h2>
 
-            <!-- LEFT FORM CONTAINER (Lg: 7 cols) -->
-            <div class="admin-form-container lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                
-                <!-- Form Navigation Tabs -->
-                <div class="flex border-b border-slate-200 bg-slate-50 text-sm font-medium overflow-x-auto">
-                    <button onclick="switchTab('tab-info')" id="btn-tab-info" class="tab-btn py-3 px-5 border-b-2 border-amber-600 text-amber-700 font-semibold flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-user"></i> <span>기본 정보</span>
-                    </button>
-                    <button onclick="switchTab('tab-place')" id="btn-tab-place" class="tab-btn py-3 px-5 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-location-dot"></i> <span>빈소 및 일시</span>
-                    </button>
-                    <button onclick="switchTab('tab-account')" id="btn-tab-account" class="tab-btn py-3 px-5 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-credit-card"></i> <span>마음 전하실 곳</span>
-                    </button>
-                    <button onclick="switchTab('tab-theme')" id="btn-tab-theme" class="tab-btn py-3 px-5 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-palette"></i> <span>테마 설정</span>
-                    </button>
-                </div>
+                <form id="bugoForm" class="space-y-4 text-sm">
+                    <!-- 장례식장 명 -->
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">장례식장명 (상단 헤더)</label>
+                        <input type="text" id="inputHallName" value="테스트장례식장" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
 
-                <!-- Form Content Sections -->
-                <form id="notice-form" class="p-6 space-y-6" onsubmit="event.preventDefault();">
-
-                    <!-- TAB 1: 고인 및 상주 정보 -->
-                    <div id="tab-info" class="tab-content space-y-5">
-                        <h3 class="text-base font-bold text-slate-900 border-l-4 border-amber-600 pl-3">고인 정보</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">고인 성함 <span class="text-rose-500">*</span></label>
-                                <input type="text" id="input-deceased-name" value="홍길동" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="예: 홍길동">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">향년 <span class="text-rose-500">*</span></label>
-                                <input type="text" id="input-deceased-age" value="85" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="예: 85세">
-                            </div>
-                        </div>
-
+                    <div class="grid grid-cols-3 gap-3">
+                        <!-- 고인 이름 -->
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">별세 일시</label>
-                            <input type="datetime-local" id="input-deceased-time" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm">
+                            <label class="block font-medium text-gray-700 mb-1">고인 성함</label>
+                            <input type="text" id="inputDeceasedName" value="김고인" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
-
+                        <!-- 나이 -->
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">부고 인사말 및 안내문구</label>
-                            <textarea id="input-message" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="부고 문구를 입력하세요.">소중한 분께서 세상을 떠나셨음을 삼가 알려드립니다. 따뜻한 위로와 조의를 부탁드립니다.</textarea>
+                            <label class="block font-medium text-gray-700 mb-1">향년 (세)</label>
+                            <input type="number" id="inputAge" value="100" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
-
-                        <hr class="my-6 border-slate-200">
-
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-base font-bold text-slate-900 border-l-4 border-amber-600 pl-3">상주 정보</h3>
-                            <button type="button" onclick="addChiefMourner()" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-md hover:bg-slate-700 transition flex items-center space-x-1">
-                                <i class="fa-solid fa-plus"></i>
-                                <span>상주 추가</span>
-                            </button>
-                        </div>
-
-                        <div id="mourner-container" class="space-y-3">
-                            <!-- Dynamic Mourner Inputs appended via JS -->
+                        <!-- 성별 -->
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1">성별</label>
+                            <select id="inputGender" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                <option value="남" selected>남</option>
+                                <option value="여">여</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- TAB 2: 빈소, 발인, 장지 정보 -->
-                    <div id="tab-place" class="tab-content hidden space-y-5">
-                        <h3 class="text-base font-bold text-slate-900 border-l-4 border-amber-600 pl-3">빈소 (장례식장)</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">장례식장 이름 <span class="text-rose-500">*</span></label>
-                                <input type="text" id="input-funeral-hall" value="서울대학교병원 장례식장" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="예: OO대학병원 장례식장">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">호실</label>
-                                <input type="text" id="input-funeral-room" value="VIP 1호실" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="예: 3층 301호">
-                            </div>
-                        </div>
+                    <!-- 영정 사진 업로드 -->
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">영정 사진 변경</label>
+                        <input type="file" id="inputPhoto" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer">
+                    </div>
 
+                    <!-- 상주 및 유족 정보 -->
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">상주 / 유족 정보</label>
+                        <input type="text" id="inputMourner" value="상주 홍길동" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="예: 상주 홍길동 / 아들 홍길순">
+                    </div>
+
+                    <!-- 발인 일시 및 시간 -->
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">장례식장 도로명 주소 <span class="text-rose-500">*</span></label>
-                            <input type="text" id="input-funeral-address" value="서울 종로구 대학로 101" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="예: 서울 종로구 대학로 101">
+                            <label class="block font-medium text-gray-700 mb-1">발인 일자</label>
+                            <input type="date" id="inputBalinDate" value="2027-12-31" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
-
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">전화번호</label>
-                            <input type="text" id="input-funeral-phone" value="02-2072-2000" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="예: 02-1234-5678">
-                        </div>
-
-                        <hr class="my-6 border-slate-200">
-
-                        <h3 class="text-base font-bold text-slate-900 border-l-4 border-amber-600 pl-3">발인 및 장지</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">발인 일시</label>
-                                <input type="datetime-local" id="input-funeral-departure" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">장지 (매장/추모공원)</label>
-                                <input type="text" id="input-burial-place" value="서울시립승화원 / 분당 메모리얼파크" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="예: OO추모공원">
-                            </div>
+                            <label class="block font-medium text-gray-700 mb-1">발인 시간</label>
+                            <input type="time" id="inputBalinTime" value="08:10" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
                     </div>
 
-                    <!-- TAB 3: 마음 전하실 곳 (계좌/스마트 조문) -->
-                    <div id="tab-account" class="tab-content hidden space-y-5">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-base font-bold text-slate-900 border-l-4 border-amber-600 pl-3">부의금 계좌 설정</h3>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="toggle-account" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-                                <span class="ml-2 text-xs font-medium text-slate-700">계좌 표시 사용</span>
-                            </label>
-                        </div>
-
-                        <p class="text-xs text-slate-500">참석이 어려우신 분들을 위해 부의금을 전달받을 계좌를 등록합니다.</p>
-
-                        <div id="account-inputs-container" class="space-y-3">
-                            <!-- Dynamic Account Inputs -->
-                        </div>
-
-                        <button type="button" onclick="addAccountInput()" class="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-md hover:bg-slate-700 transition flex items-center space-x-1">
-                            <i class="fa-solid fa-plus"></i>
-                            <span>계좌 추가</span>
-                        </button>
-
-                        <hr class="my-6 border-slate-200">
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-base font-bold text-slate-900 border-l-4 border-amber-600 pl-3">근조화환 안내</h3>
-                                <p class="text-xs text-slate-500 mt-1">저희 장례식장은 근조화환은 받지 않습니다.</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="toggle-wreath" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-                                <span class="ml-2 text-xs font-medium text-slate-700">화환 받음</span>
-                            </label>
-                        </div>
+                    <!-- 부의 계좌 정보 -->
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">부의금 계좌 정보</label>
+                        <input type="text" id="inputAccount" value="신한은행 110-123-456789 (예금주: 홍길동)" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
 
-                    <!-- TAB 4: 디자인 테마 -->
-                    <div id="tab-theme" class="tab-content hidden space-y-5">
-                        <h3 class="text-base font-bold text-slate-900 border-l-4 border-amber-600 pl-3">디자인 테마 선택</h3>
-                        <p class="text-xs text-slate-500">부고장의 전체적인 분위기와 색상을 설정합니다.</p>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <!-- Theme Option 1: Dark -->
-                            <label class="cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2 transition bg-zinc-900 text-white border-amber-500 shadow-md" id="theme-label-dark">
-                                <input type="radio" name="theme-select" value="dark" class="hidden" checked onchange="changeTheme('dark')">
-                                <div class="w-full h-12 bg-zinc-800 rounded flex items-center justify-center border border-zinc-700">
-                                    <span class="text-xs text-amber-200 font-serif">故 홍길동</span>
-                                </div>
-                                <span class="text-xs font-bold">차분한 어두운 톤</span>
-                            </label>
-
-                            <!-- Theme Option 2: Beige -->
-                            <label class="cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2 transition bg-[#f9f6f0] text-stone-800 border-slate-200 hover:border-amber-400" id="theme-label-beige">
-                                <input type="radio" name="theme-select" value="beige" class="hidden" onchange="changeTheme('beige')">
-                                <div class="w-full h-12 bg-white rounded flex items-center justify-center border border-stone-300">
-                                    <span class="text-xs text-stone-700 font-serif">故 홍길동</span>
-                                </div>
-                                <span class="text-xs font-bold">단아한 베이지 톤</span>
-                            </label>
-
-                            <!-- Theme Option 3: Modern White -->
-                            <label class="cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2 transition bg-white text-slate-900 border-slate-200 hover:border-amber-400" id="theme-label-white">
-                                <input type="radio" name="theme-select" value="white" class="hidden" onchange="changeTheme('white')">
-                                <div class="w-full h-12 bg-slate-50 rounded flex items-center justify-center border border-slate-200">
-                                    <span class="text-xs text-slate-800 font-serif">故 홍길동</span>
-                                </div>
-                                <span class="text-xs font-bold">깔끔한 화이트 톤</span>
-                            </label>
-                        </div>
+                    <!-- 하단 공지 안내 문구 -->
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">하단 공지 배너 문구</label>
+                        <input type="text" id="inputNotice" value="본 빈소는 스마트화환만 받습니다" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
                     </div>
-
                 </form>
             </div>
 
+            <!-- 메시지 송출 / 공유 버튼 구역 -->
+            <div class="mt-6 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3">
+                <button onclick="shareKakao()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-amber-950 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm text-xs md:text-sm transition">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i>
+                    카카오톡 부고 송출
+                </button>
+                <button onclick="copySMS()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm text-xs md:text-sm transition">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                    문자 메시지 복사
+                </button>
+            </div>
+        </section>
 
-            <!-- RIGHT SMARTPHONE PREVIEW (Lg: 5 cols) -->
-            <div class="phone-preview-wrapper lg:col-span-5 flex flex-col items-center justify-center sticky top-20">
-                <div class="text-xs font-semibold text-slate-500 mb-2 flex items-center space-x-1">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
-                    <span>실시간 스마트폰 미리보기</span>
-                </div>
-
-                <!-- Phone Outer Mockup -->
-                <div class="phone-frame w-[340px] h-[680px] bg-slate-900 relative overflow-hidden flex flex-col">
-                    <div class="phone-notch"></div>
-                    
-                    <!-- Preview Inner Scrollable Content -->
-                    <div id="preview-container" class="w-full h-full pt-8 pb-6 px-4 preview-scroll overflow-y-auto font-serif transition-colors duration-300 bg-zinc-900 text-zinc-100">
-
-                        <!-- Header Flower Graphic / Icon -->
-                        <div class="text-center pt-4 pb-3">
-                            <div class="inline-block p-2 rounded-full border border-amber-200/20 mb-2">
-                                <i class="fa-solid fa-ribbon text-amber-200/80 text-xl"></i>
-                            </div>
-                            <p class="text-[11px] tracking-widest text-amber-200/70 uppercase">더빅 부고</p>
-                            <h1 class="text-lg font-bold mt-1 tracking-tight" id="pv-title">謹 弔</h1>
-                        </div>
-
-                        <!-- Deceased Main Box -->
-                        <div class="text-center my-4 py-4 border-y border-white/10">
-                            <p class="text-xs opacity-75 mb-1" id="pv-deceased-date-str">2026년 10월 22일 별세</p>
-                            <h2 class="text-xl font-bold tracking-wide my-1">
-                                故 <span id="pv-deceased-name">홍길동</span> 님
-                            </h2>
-                            <p class="text-xs opacity-80" id="pv-deceased-age">(향년 85세)</p>
-                        </div>
-
-                        <!-- Notice Text -->
-                        <div class="text-center px-2 my-5">
-                            <p class="text-xs leading-relaxed whitespace-pre-line opacity-90 font-sans" id="pv-message">
-                                소중한 분께서 세상을 떠나셨음을 삼가 알려드립니다. 따뜻한 위로와 조의를 부탁드립니다.
-                            </p>
-                        </div>
-
-                        <!-- Chief Mourners List -->
-                        <div class="my-6 bg-black/20 rounded-xl p-3 text-xs space-y-2 font-sans border border-white/5">
-                            <div class="font-serif text-amber-200/90 font-semibold mb-2 border-b border-white/10 pb-1 text-[11px] text-center">유 족 (상 주)</div>
-                            <div id="pv-mourners-list" class="space-y-1.5">
-                                <!-- Dynamic mourner rows -->
-                            </div>
-                        </div>
-
-                        <!-- Funeral Place Info -->
-                        <div class="my-6 space-y-3 text-xs font-sans">
-                            <div class="p-3.5 rounded-xl bg-black/20 border border-white/5 space-y-2">
-                                <div class="flex items-center space-x-2 text-amber-200/90 font-semibold font-serif text-[13px]">
-                                    <i class="fa-solid fa-location-dot text-xs"></i>
-                                    <span>빈소 안내</span>
-                                </div>
-                                <div class="text-sm font-bold" id="pv-hall-name">서울대학교병원 장례식장</div>
-                                <div class="text-xs opacity-80" id="pv-room-name">VIP 1호실</div>
-                                <div class="text-xs opacity-70 text-slate-300" id="pv-hall-address">서울 종로구 대학로 101</div>
-                                <div class="text-xs opacity-70" id="pv-hall-phone">Tel: 02-2072-2000</div>
-
-                                <!-- Map Buttons -->
-                                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
-                                    <button onclick="openMap('kakao')" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] py-1.5 rounded flex items-center justify-center space-x-1 border border-amber-500/30 transition">
-                                        <i class="fa-solid fa-map"></i>
-                                        <span>LED 화환</span>
-                                    </button>
-                                    <button onclick="openMap('naver')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[11px] py-1.5 rounded flex items-center justify-center space-x-1 border border-emerald-500/30 transition">
-                                        <i class="fa-solid fa-map-location-dot"></i>
-                                        <span>네이버지도</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Schedule (Departure & Burial) -->
-                            <div class="p-3.5 rounded-xl bg-black/20 border border-white/5 space-y-2">
-                                <div class="flex items-center space-x-2 text-amber-200/90 font-semibold font-serif text-[13px]">
-                                    <i class="fa-regular fa-clock text-xs"></i>
-                                    <span>장례 일정</span>
-                                </div>
-                                <div class="space-y-1">
-                                    <div class="flex justify-between items-center text-xs">
-                                        <span class="opacity-70">발인일시</span>
-                                        <span class="font-medium" id="pv-departure-time">2026년 10월 24일 08:00</span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-xs">
-                                        <span class="opacity-70">장지</span>
-                                        <span class="font-medium text-right" id="pv-burial-place">서울시립승화원</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Account Info Section (Condolence Money) -->
-                            <div id="pv-account-section" class="p-3.5 rounded-xl bg-black/20 border border-white/5 space-y-2">
-                                <div class="flex items-center space-x-2 text-amber-200/90 font-semibold font-serif text-[13px]">
-                                    <i class="fa-solid fa-heart text-xs"></i>
-                                    <span>마음 전하실 곳</span>
-                                </div>
-                                <p class="text-[11px] opacity-75 leading-tight">부득이하게 조문이 어려우신 분들을 위해 계좌를 안내해 드립니다.</p>
-                                <div id="pv-accounts-list" class="space-y-2 pt-1">
-                                    <!-- Dynamic Accounts -->
-                                </div>
-                            </div>
-
-                            <!-- Wreath Notice -->
-                            <div id="pv-wreath-section" class="p-3 rounded-xl bg-amber-900/20 border border-amber-500/20 text-center text-xs text-amber-200/90">
-                                <i class="fa-solid fa-circle-info mr-1"></i> 근조화환은 받지 않습니다.
-                            </div>
-                        </div>
-
-                        <!-- Footer -->
-                        <div class="text-center pt-4 pb-8 border-t border-white/10 text-[10px] opacity-50 font-sans">
-                            삼가 고인의 명복을 빕니다.
-                        </div>
-
-                    </div>
-                </div>
+        <!-- Right: Real-time Mobile Preview Panel -->
+        <section class="lg:col-span-6 flex flex-col items-center justify-start">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <i data-lucide="smartphone" class="w-4 h-4"></i> 실시간 모바일 프리뷰
             </div>
 
-        </div>
+            <!-- Smartphone Frame Mockup -->
+            <div class="w-full max-w-[390px] bg-black rounded-[40px] p-3 shadow-2xl border-4 border-slate-800 relative">
+                <!-- Speaker/Camera Notch -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-5 bg-black rounded-b-xl z-30 flex items-center justify-center">
+                    <div class="w-12 h-1 bg-slate-800 rounded-full"></div>
+                </div>
+
+                <!-- Screen Content Area (Scrollable inside phone) -->
+                <div id="mobilePreview" class="w-full bg-[#f6f3eb] rounded-[30px] overflow-hidden min-h-[660px] flex flex-col justify-between text-slate-800 relative select-none">
+                    
+                    <!-- 1. Top Navy Header -->
+                    <div class="bg-[#1a2536] text-white py-3 px-4 text-center font-serif-kr text-base font-semibold tracking-wide shadow-md z-10 pt-6">
+                        <span id="previewHallName">테스트장례식장</span>
+                    </div>
+
+                    <!-- 2. Main Floral Banner with Portrait Frame -->
+                    <div class="relative bg-[#d1c2a5] py-6 px-4 flex flex-col items-center justify-center overflow-hidden border-b border-amber-900/10">
+                        <!-- Floral Background SVG -->
+                        <svg class="absolute inset-0 w-full h-full object-cover opacity-35 pointer-events-none" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="180" r="80" fill="#ffffff"/>
+                            <circle cx="350" cy="180" r="80" fill="#ffffff"/>
+                            <path d="M10 120 C 60 90, 100 150, 150 110" stroke="#5a6b48" stroke-width="8" stroke-linecap="round"/>
+                            <path d="M390 120 C 340 90, 300 150, 250 110" stroke="#5a6b48" stroke-width="8" stroke-linecap="round"/>
+                        </svg>
+
+                        <!-- Memorial Portrait Frame -->
+                        <div class="relative z-10 my-1">
+                            <div class="relative w-36 h-48 bg-slate-900 p-1.5 rounded border-2 border-stone-600 shadow-2xl flex flex-col items-center justify-center">
+                                <!-- Black Ribbon -->
+                                <div class="absolute -top-1 -left-1 w-12 h-12 z-20 pointer-events-none">
+                                    <div class="w-10 h-2 bg-black transform -rotate-45 translate-y-3 -translate-x-2 shadow"></div>
+                                </div>
+                                <div class="absolute -top-1 -right-1 w-12 h-12 z-20 pointer-events-none">
+                                    <div class="w-10 h-2 bg-black transform rotate-45 translate-y-3 translate-x-2 shadow"></div>
+                                </div>
+                                <!-- Chrysanthemum Icon on Frame Top -->
+                                <div class="absolute -top-3 bg-stone-800 text-amber-200 rounded-full p-0.5 border border-amber-400/40 z-20">
+                                    <i data-lucide="flower-2" class="w-4 h-4"></i>
+                                </div>
+
+                                <!-- Photo Area -->
+                                <div class="w-full h-full bg-slate-200 overflow-hidden rounded-sm flex items-center justify-center">
+                                    <img id="previewPhoto" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300" alt="영정사진" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Deceased Info Section -->
+                    <div class="py-4 text-center bg-[#f6f3eb] px-4">
+                        <h3 class="text-xl font-bold font-serif-kr text-slate-900 tracking-tight">
+                            故 <span id="previewDeceasedName">김고인</span> (<span id="previewAge">100</span> 세 / <span id="previewGender">남</span>)
+                        </h3>
+                        <p class="text-xs text-slate-600 mt-1 font-serif-kr tracking-widest">별세</p>
+                    </div>
+
+                    <div class="px-5 my-1">
+                        <hr class="border-t border-slate-300">
+                    </div>
+
+                    <!-- 4. Mourner & Funeral Date Info -->
+                    <div class="px-6 py-3 space-y-3 font-serif-kr text-slate-800 flex-1">
+                        <!-- Sangju Info -->
+                        <div class="flex items-start gap-2">
+                            <i data-lucide="flower-2" class="w-4 h-4 text-slate-600 mt-0.5 shrink-0"></i>
+                            <div>
+                                <span class="font-semibold text-sm">상주</span>
+                                <p id="previewMourner" class="text-sm font-sans font-medium text-slate-900 mt-0.5">상주 홍길동</p>
+                            </div>
+                        </div>
+
+                        <!-- Balin Date & Countdown -->
+                        <div class="pt-2 border-t border-slate-200/60">
+                            <div class="text-xs text-slate-500">발인일</div>
+                            <div id="previewBalinFull" class="text-sm font-semibold font-sans text-slate-900 mt-0.5">
+                                2027년 12월 31일(금) 08시 10분
+                            </div>
+                            <div id="previewDday" class="text-xs font-sans text-rose-600 font-medium mt-1">
+                                발인까지 473일 남았습니다
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Sticky Bottom Action Buttons & Banner -->
+                    <div class="mt-auto">
+                        <!-- Split Buttons (Top: Account & Share, Bottom: Wreath) -->
+                        <div class="grid grid-cols-2 text-xs font-bold text-slate-800 border-t border-amber-200/50">
+                            <button onclick="showAccountModal()" class="bg-[#fcd34d] hover:bg-amber-400 py-3 flex items-center justify-center gap-1.5 transition border-r border-amber-300/60">
+                                <i data-lucide="wallet" class="w-4 h-4"></i>
+                                부의금
+                            </button>
+                            <button onclick="shareKakao()" class="bg-white hover:bg-slate-50 py-3 flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="share-2" class="w-4 h-4 text-slate-700"></i>
+                                부고전달
+                            </button>
+                        </div>
+                        <button onclick="alert('스마트화환 신청 페이지로 이동합니다.')" class="w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white font-bold py-3 text-xs flex items-center justify-center gap-1.5 shadow-inner transition">
+                            <i data-lucide="flower-2" class="w-4 h-4"></i>
+                            스마트화환
+                        </button>
+
+                        <!-- Bottom Red/Orange Notice Banner -->
+                        <div class="bg-[#ea580c] text-white text-center py-2.5 px-3 text-xs font-bold tracking-wide">
+                            <span id="previewNotice">본 빈소는 스마트화환만 받습니다</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- SHARE & SEND MODAL -->
-    <div id="share-modal" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-5 transform transition-all">
-            <button onclick="closeShareModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-
-            <div>
-                <h3 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
-                    <i class="fa-solid fa-paper-plane text-amber-600"></i>
-                    <span>부고장 공유 및 전송</span>
-                </h3>
-                <p class="text-xs text-slate-500 mt-1">완성된 모바일 부고장을 카카오톡이나 문자로 공유하세요.</p>
-            </div>
-
-            <!-- Kakao Card Simulation Preview -->
-            <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 space-y-2">
-                <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">카카오톡 공유 카드 예시</div>
-                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-start space-x-3">
-                    <div class="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center text-amber-200 shrink-0">
-                        <i class="fa-solid fa-ribbon text-lg"></i>
-                    </div>
-                    <div class="text-xs space-y-1 overflow-hidden">
-                        <div class="font-bold text-slate-900 truncate" id="modal-kakao-title">[부고] 故 홍길동 님 별세</div>
-                        <div class="text-slate-600 text-[11px] truncate" id="modal-kakao-sub">빈소: 서울대학교병원 장례식장</div>
-                        <div class="text-slate-400 text-[10px]">클릭하여 모바일 부고장 확인</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Text Copy Box -->
-            <div class="space-y-1">
-                <label class="block text-xs font-semibold text-slate-700">문자용 부고 텍스트</label>
-                <textarea id="modal-text-content" rows="6" readonly class="w-full text-xs p-3 bg-slate-50 border border-slate-300 rounded-lg font-mono focus:outline-none"></textarea>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="copyNoticeText()" class="bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center space-x-2 transition shadow">
-                    <i class="fa-regular fa-copy"></i>
-                    <span>문자 텍스트 복사</span>
-                </button>
-                <button onclick="simulateKakaoShare()" class="bg-amber-400 hover:bg-amber-500 text-slate-900 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center space-x-2 transition shadow">
-                    <i class="fa-solid fa-comment"></i>
-                    <span>카카오톡 전송</span>
-                </button>
+    <!-- Account Modal -->
+    <div id="accountModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl text-center space-y-4">
+            <h3 class="text-lg font-bold text-slate-900 font-serif-kr">부의금 전달 계좌</h3>
+            <p id="modalAccountText" class="text-sm bg-slate-50 p-3 rounded-lg border text-slate-700 font-mono break-all"></p>
+            <div class="flex gap-2">
+                <button onclick="copyAccount()" class="flex-1 bg-amber-600 text-white py-2.5 rounded-xl font-medium text-sm hover:bg-amber-700 transition">계좌번호 복사</button>
+                <button onclick="closeAccountModal()" class="flex-1 bg-slate-200 text-slate-700 py-2.5 rounded-xl font-medium text-sm hover:bg-slate-300 transition">닫기</button>
             </div>
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-lg hidden z-50 flex items-center space-x-2 border border-slate-700">
-        <i class="fa-solid fa-circle-check text-emerald-400" id="toast-icon"></i>
-        <span id="toast-message">내용이 복사되었습니다.</span>
-    </div>
-
+    <!-- Script Section -->
     <script>
-      // 1. 카카오 JavaScript SDK 초기화 (JavaScript 키 적용)
-      Kakao.init('58a1eed30cf45bb1138fd58b2a158ffd');
-      
-      console.log('Kakao SDK Initialized:', Kakao.isInitialized());
+        // Initialize Lucide Icons
+        lucide.createIcons();
 
-      // 2. 카카오톡 공유 실행 함수
-      function simulateKakaoShare() {
-        if (!Kakao.isInitialized()) {
-          alert('카카오 SDK가 초기화되지 않았습니다. JavaScript 키를 확인해 주세요.');
-          return;
-        }
-
-        const titleElement = document.getElementById('modal-kakao-title');
-        const subElement = document.getElementById('modal-kakao-sub');
-
-        const titleText = titleElement ? titleElement.innerText : '[부고] 삼가 고인의 명복을 빕니다.';
-        const subText = subElement ? subElement.innerText : '모바일 부고장을 확인하시려면 아래 버튼을 눌러주세요.';
-
-        Kakao.Share.sendDefault({
-          objectType: 'feed',
-          content: {
-            title: titleText,
-            description: subText,
-            imageUrl: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?q=80&w=800',
-            link: {
-              mobileWebUrl: window.location.href,
-              webUrl: window.location.href,
-            },
-          },
-          buttons: [
-            {
-              title: '부고장 확인하기',
-              link: {
-                mobileWebUrl: window.location.href,
-                webUrl: window.location.href,
-              },
-            },
-          ],
-        });
-      }
-
-      // 3. 문자용 부고 텍스트 복사 함수
-      function copyNoticeText() {
-        const textContent = document.getElementById('modal-text-content');
-        if (!textContent) return;
-
-        navigator.clipboard.writeText(textContent.value).then(() => {
-          showToast('문자용 부고 텍스트가 복사되었습니다.');
-        }).catch(err => {
-          textContent.select();
-          document.execCommand('copy');
-          showToast('문자용 부고 텍스트가 복사되었습니다.');
-        });
-      }
-
-      // 4. 하단 알림 토스트 메시지 표시 함수
-      function showToast(message) {
-        const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toast-message');
-
-        if (!toast || !toastMessage) return;
-
-        toastMessage.innerText = message;
-        toast.classList.remove('hidden');
-        toast.classList.add('flex');
-
-        setTimeout(() => {
-          toast.classList.remove('flex');
-          toast.classList.add('hidden');
-        }, 3000);
-      }
-    </script>
-    <script>
-        // Default State Data
-        const state = {
-            deceased: {
-                name: "홍길동",
-                age: "85",
-                time: getFormattedCurrentDate(),
-                message: "소중한 분께서 세상을 떠나셨음을 삼가 알려드립니다.\n따뜻한 위로와 조의를 부탁드립니다."
-            },
-            mourners: [
-                { relation: "아들", name: "홍판서", phone: "010-1234-5678" },
-                { relation: "딸", name: "홍길순", phone: "010-9876-5432" }
-            ],
-            funeral: {
-                hall: "서울대학교병원 장례식장",
-                room: "VIP 1호실",
-                address: "서울 종로구 대학로 101",
-                phone: "02-2072-2000",
-                departure: getFormattedFutureDate(2),
-                burial: "서울시립승화원 / 분당 메모리얼파크"
-            },
-            accounts: [
-                { bank: "국민은행", number: "123456-04-123456", holder: "홍판서" },
-                { bank: "신한은행", number: "110-123-456789", holder: "홍길순" }
-            ],
-            settings: {
-                showAccount: true,
-                showWreath: true,
-                theme: "dark"
-            }
+        // Elements Mapping
+        const inputs = {
+            hallName: document.getElementById('inputHallName'),
+            deceasedName: document.getElementById('inputDeceasedName'),
+            age: document.getElementById('inputAge'),
+            gender: document.getElementById('inputGender'),
+            photo: document.getElementById('inputPhoto'),
+            mourner: document.getElementById('inputMourner'),
+            balinDate: document.getElementById('inputBalinDate'),
+            balinTime: document.getElementById('inputBalinTime'),
+            account: document.getElementById('inputAccount'),
+            notice: document.getElementById('inputNotice')
         };
 
-        // Helper Functions for Dates
-        function getFormattedCurrentDate() {
-            const now = new Date();
-            now.setHours(9, 0, 0, 0);
-            return now.toISOString().slice(0, 16);
-        }
-
-        function getFormattedFutureDate(daysToAdd) {
-            const date = new Date();
-            date.setDate(date.getDate() + daysToAdd);
-            date.setHours(8, 0, 0, 0);
-            return date.toISOString().slice(0, 16);
-        }
-
-        function formatDateString(isoString) {
-            if (!isoString) return "";
-            const d = new Date(isoString);
-            const year = d.getFullYear();
-            const month = d.getMonth() + 1;
-            const day = d.getDate();
-            const hours = String(d.getHours()).padStart(2, '0');
-            const minutes = String(d.getMinutes()).padStart(2, '0');
-            const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
-            const dayName = daysOfWeek[d.getDay()];
-
-            return `${year}년 ${month}월 ${day}일 (${dayName}) ${hours}:${minutes}`;
-        }
-
-        // Initialize App
-        window.onload = function() {
-            initFormValues();
-            renderMournersInput();
-            renderAccountInputs();
-            bindInputEvents();
-            updatePreview();
+        const previews = {
+            hallName: document.getElementById('previewHallName'),
+            deceasedName: document.getElementById('previewDeceasedName'),
+            age: document.getElementById('previewAge'),
+            gender: document.getElementById('previewGender'),
+            photo: document.getElementById('previewPhoto'),
+            mourner: document.getElementById('previewMourner'),
+            balinFull: document.getElementById('previewBalinFull'),
+            dday: document.getElementById('previewDday'),
+            notice: document.getElementById('previewNotice')
         };
 
-        function initFormValues() {
-            document.getElementById('input-deceased-name').value = state.deceased.name;
-            document.getElementById('input-deceased-age').value = state.deceased.age;
-            document.getElementById('input-deceased-time').value = state.deceased.time;
-            document.getElementById('input-message').value = state.deceased.message;
-
-            document.getElementById('input-funeral-hall').value = state.funeral.hall;
-            document.getElementById('input-funeral-room').value = state.funeral.room;
-            document.getElementById('input-funeral-address').value = state.funeral.address;
-            document.getElementById('input-funeral-phone').value = state.funeral.phone;
-            document.getElementById('input-funeral-departure').value = state.funeral.departure;
-            document.getElementById('input-burial-place').value = state.funeral.burial;
-
-            document.getElementById('toggle-account').checked = state.settings.showAccount;
-            document.getElementById('toggle-wreath').checked = state.settings.showWreath;
-        }
-
-        function bindInputEvents() {
-            const inputs = document.querySelectorAll('input, textarea');
-            inputs.forEach(input => {
-                input.addEventListener('input', updateStateFromForm);
-            });
-
-            document.getElementById('toggle-account').addEventListener('change', (e) => {
-                state.settings.showAccount = e.target.checked;
-                updatePreview();
-            });
-
-            document.getElementById('toggle-wreath').addEventListener('change', (e) => {
-                state.settings.showWreath = e.target.checked;
-                updatePreview();
-            });
-        }
-
-        function updateStateFromForm() {
-            state.deceased.name = document.getElementById('input-deceased-name').value || "OOO";
-            state.deceased.age = document.getElementById('input-deceased-age').value || "00";
-            state.deceased.time = document.getElementById('input-deceased-time').value;
-            state.deceased.message = document.getElementById('input-message').value;
-
-            state.funeral.hall = document.getElementById('input-funeral-hall').value || "장례식장명";
-            state.funeral.room = document.getElementById('input-funeral-room').value || "";
-            state.funeral.address = document.getElementById('input-funeral-address').value || "";
-            state.funeral.phone = document.getElementById('input-funeral-phone').value || "";
-            state.funeral.departure = document.getElementById('input-funeral-departure').value;
-            state.funeral.burial = document.getElementById('input-burial-place').value || "";
-
-            const mournerRows = document.querySelectorAll('.mourner-row');
-            state.mourners = [];
-            mournerRows.forEach(row => {
-                const rel = row.querySelector('.mourner-rel').value;
-                const name = row.querySelector('.mourner-name').value;
-                const phone = row.querySelector('.mourner-phone').value;
-                if (name || rel) {
-                    state.mourners.push({ relation: rel, name: name, phone: phone });
-                }
-            });
-
-            const accountRows = document.querySelectorAll('.account-row');
-            state.accounts = [];
-            accountRows.forEach(row => {
-                const bank = row.querySelector('.account-bank').value;
-                const number = row.querySelector('.account-num').value;
-                const holder = row.querySelector('.account-holder').value;
-                if (number || holder) {
-                    state.accounts.push({ bank: bank, number: number, holder: holder });
-                }
-            });
-
-            updatePreview();
-        }
-
-        function renderMournersInput() {
-            const container = document.getElementById('mourner-container');
-            container.innerHTML = '';
-            state.mourners.forEach((m, index) => {
-                const row = document.createElement('div');
-                row.className = 'mourner-row flex items-center space-x-2';
-                row.innerHTML = `
-                    <input type="text" value="${m.relation}" class="mourner-rel w-1/4 px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none" placeholder="관계 (예: 아들)">
-                    <input type="text" value="${m.name}" class="mourner-name w-1/3 px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none" placeholder="성함">
-                    <input type="text" value="${m.phone}" class="mourner-phone w-1/3 px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none" placeholder="연락처">
-                    <button type="button" onclick="removeMourner(${index})" class="text-slate-400 hover:text-rose-500 p-1">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                `;
-                container.appendChild(row);
-            });
-            bindInputEvents();
-        }
-
-        function addChiefMourner() {
-            state.mourners.push({ relation: "", name: "", phone: "" });
-            renderMournersInput();
-            updatePreview();
-        }
-
-        function removeMourner(index) {
-            state.mourners.splice(index, 1);
-            renderMournersInput();
-            updatePreview();
-        }
-
-        function renderAccountInputs() {
-            const container = document.getElementById('account-inputs-container');
-            container.innerHTML = '';
-            state.accounts.forEach((acc, index) => {
-                const row = document.createElement('div');
-                row.className = 'account-row p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 relative';
-                row.innerHTML = `
-                    <button type="button" onclick="removeAccount(${index})" class="absolute top-2 right-2 text-slate-400 hover:text-rose-500 text-xs">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" value="${acc.bank}" class="account-bank px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none" placeholder="은행명 (예: 국민은행)">
-                        <input type="text" value="${acc.holder}" class="account-holder px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none" placeholder="예금주">
-                    </div>
-                    <input type="text" value="${acc.number}" class="account-num w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none" placeholder="계좌번호">
-                `;
-                container.appendChild(row);
-            });
-            bindInputEvents();
-        }
-
-        function addAccountInput() {
-            state.accounts.push({ bank: "", number: "", holder: "" });
-            renderAccountInputs();
-            updatePreview();
-        }
-
-        function removeAccount(index) {
-            state.accounts.splice(index, 1);
-            renderAccountInputs();
-            updatePreview();
-        }
-
+        // Real-time Update Handler
         function updatePreview() {
-            document.getElementById('pv-deceased-name').textContent = state.deceased.name;
-            document.getElementById('pv-deceased-age').textContent = state.deceased.age ? `(향년 ${state.deceased.age}세)` : "";
-            document.getElementById('pv-deceased-date-str').textContent = state.deceased.time ? `${formatDateString(state.deceased.time)} 별세` : "";
-            document.getElementById('pv-message').textContent = state.deceased.message;
+            previews.hallName.textContent = inputs.hallName.value || '장례식장';
+            previews.deceasedName.textContent = inputs.deceasedName.value || '고인명';
+            previews.age.textContent = inputs.age.value || '0';
+            previews.gender.textContent = inputs.gender.value;
+            previews.mourner.textContent = inputs.mourner.value || '상주 정보';
+            previews.notice.textContent = inputs.notice.value || '마음 전하실 곳';
 
-            document.getElementById('pv-hall-name').textContent = state.funeral.hall;
-            document.getElementById('pv-room-name').textContent = state.funeral.room;
-            document.getElementById('pv-hall-address').textContent = state.funeral.address;
-            document.getElementById('pv-hall-phone').textContent = state.funeral.phone ? `Tel: ${state.funeral.phone}` : "";
+            // Date Formatting and D-Day Calculation
+            if (inputs.balinDate.value) {
+                const dateObj = new Date(inputs.balinDate.value + 'T' + (inputs.balinTime.value || '00:00'));
+                const days = ['일', '월', '화', '수', '목', '금', '토'];
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const date = String(dateObj.getDate()).padStart(2, '0');
+                const dayName = days[dateObj.getDay()];
+                const hours = String(dateObj.getHours()).padStart(2, '0');
+                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
 
-            document.getElementById('pv-departure-time').textContent = formatDateString(state.funeral.departure) || "-";
-            document.getElementById('pv-burial-place').textContent = state.funeral.burial || "-";
+                previews.balinFull.textContent = `${year}년 ${month}월 ${date}일(${dayName}) ${hours}시 ${minutes}분`;
 
-            const pvMournersList = document.getElementById('pv-mourners-list');
-            pvMournersList.innerHTML = '';
-            state.mourners.forEach(m => {
-                if (!m.name) return;
-                const item = document.createElement('div');
-                item.className = 'flex justify-between items-center text-xs';
-                item.innerHTML = `
-                    <span><span class="opacity-60 mr-1">${m.relation}</span> <strong>${m.name}</strong></span>
-                    ${m.phone ? `<a href="tel:${m.phone}" class="opacity-75 hover:opacity-100 text-[11px] underline"><i class="fa-solid fa-phone text-[10px] mr-1"></i>연락하기</a>` : ''}
-                `;
-                pvMournersList.appendChild(item);
-            });
+                // Calculate Days Left
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const targetDay = new Date(inputs.balinDate.value);
+                targetDay.setHours(0, 0, 0, 0);
+                
+                const diffTime = targetDay - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            const accountSec = document.getElementById('pv-account-section');
-            const accountsList = document.getElementById('pv-accounts-list');
-            accountsList.innerHTML = '';
-
-            if (state.settings.showAccount && state.accounts.length > 0) {
-                accountSec.classList.remove('hidden');
-                state.accounts.forEach(acc => {
-                    if (!acc.number) return;
-                    const card = document.createElement('div');
-                    card.className = 'p-2 rounded bg-white/5 border border-white/10 flex justify-between items-center text-xs';
-                    card.innerHTML = `
-                        <div>
-                            <div class="font-medium text-[11px]">${acc.bank} (${acc.holder})</div>
-                            <div class="opacity-80 font-mono text-[11px]">${acc.number}</div>
-                        </div>
-                        <button onclick="copyToClipboard('${acc.number}', '${acc.bank} 계좌번호가 복사되었습니다.')" class="bg-white/10 hover:bg-white/20 text-[10px] px-2 py-1 rounded transition">
-                            복사
-                        </button>
-                    `;
-                    accountsList.appendChild(card);
-                });
-            } else {
-                accountSec.classList.add('hidden');
-            }
-
-            const wreathSec = document.getElementById('pv-wreath-section');
-            if (state.settings.showWreath) {
-                wreathSec.classList.remove('hidden');
-            } else {
-                wreathSec.classList.add('hidden');
-            }
-        }
-
-        function changeTheme(themeKey) {
-            state.settings.theme = themeKey;
-            const pvContainer = document.getElementById('preview-container');
-
-            document.querySelectorAll('[id^="theme-label-"]').forEach(el => {
-                el.classList.remove('border-amber-500', 'shadow-md');
-                el.classList.add('border-slate-200');
-            });
-
-            const activeLabel = document.getElementById(`theme-label-${themeKey}`);
-            if (activeLabel) {
-                activeLabel.classList.add('border-amber-500', 'shadow-md');
-                activeLabel.classList.remove('border-slate-200');
-            }
-
-            if (themeKey === 'dark') {
-                pvContainer.className = "w-full h-full pt-8 pb-6 px-4 preview-scroll overflow-y-auto font-serif transition-colors duration-300 bg-zinc-900 text-zinc-100";
-            } else if (themeKey === 'beige') {
-                pvContainer.className = "w-full h-full pt-8 pb-6 px-4 preview-scroll overflow-y-auto font-serif transition-colors duration-300 bg-[#f8f5ee] text-stone-800";
-            } else if (themeKey === 'white') {
-                pvContainer.className = "w-full h-full pt-8 pb-6 px-4 preview-scroll overflow-y-auto font-serif transition-colors duration-300 bg-white text-slate-900";
-            }
-        }
-
-        function openMap(type) {
-            const query = encodeURIComponent(state.funeral.hall + " " + state.funeral.address);
-            let url = "";
-            if (type === 'kakao') {
-                url = `https://map.kakao.com/?q=${query}`;
-            } else {
-                url = `https://map.naver.com/v5/search/${query}`;
-            }
-            window.open(url, '_blank');
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(tabId).classList.remove('hidden');
-
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('border-amber-600', 'text-amber-700', 'font-semibold');
-                btn.classList.add('border-transparent', 'text-slate-500');
-            });
-
-            const activeBtn = document.getElementById(`btn-${tabId}`);
-            activeBtn.classList.add('border-amber-600', 'text-amber-700', 'font-semibold');
-            activeBtn.classList.remove('border-transparent', 'text-slate-500');
-        }
-
-        function openShareModal() {
-            document.getElementById('share-modal').classList.remove('hidden');
-            document.getElementById('share-modal').classList.add('flex');
-
-            document.getElementById('modal-kakao-title').textContent = `[부고] 故 ${state.deceased.name} 님 별세`;
-            document.getElementById('modal-kakao-sub').textContent = `빈소: ${state.funeral.hall} ${state.funeral.room}`;
-
-            let mournersText = state.mourners.map(m => ` - ${m.relation}: ${m.name}`).join('\n');
-            let accountsText = state.settings.showAccount ? state.accounts.map(a => ` - ${a.bank} ${a.number} (예금주: ${a.holder})`).join('\n') : " - 계좌 생략";
-
-            const currentUrl = window.location.href;
-
-            const noticeText = `[부고 알림]
-
-故 ${state.deceased.name} 님께서 별세하셨기에 아래와 같이 부고를 전해드립니다.
-
-■ 고인: 故 ${state.deceased.name} (향년 ${state.deceased.age}세)
-■ 별세일시: ${formatDateString(state.deceased.time)}
-
-■ 유족(상주):
-${mournersText}
-
-■ 빈소: ${state.funeral.hall} ${state.funeral.room}
-■ 주소: ${state.funeral.address}
-■ 발인: ${formatDateString(state.funeral.departure)}
-■ 장지: ${state.funeral.burial}
-
-■ 마음 전하실 곳:
-${accountsText}
-
-■ 모바일 부고장 링크:
-${currentUrl}`;
-
-            document.getElementById('modal-text-content').value = noticeText;
-        }
-
-        function closeShareModal() {
-            document.getElementById('share-modal').classList.add('hidden');
-            document.getElementById('share-modal').classList.remove('flex');
-        }
-
-        function copyToClipboard(text, successMsg) {
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showToast(successMsg);
-                });
-            } else {
-                const textarea = document.createElement("textarea");
-                textarea.value = text;
-                textarea.style.position = "fixed";
-                textarea.style.left = "-9999px";
-                document.body.appendChild(textarea);
-                textarea.focus();
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    showToast(successMsg);
-                } catch (err) {
-                    showToast("복사 실패. 직접 입력해주세요.");
+                if (diffDays > 0) {
+                    previews.dday.textContent = `발인까지 ${diffDays}일 남았습니다`;
+                } else if (diffDays === 0) {
+                    previews.dday.textContent = `오늘 발인입니다`;
+                } else {
+                    previews.dday.textContent = `발인이 완료되었습니다`;
                 }
-                document.body.removeChild(textarea);
             }
         }
+
+        // Handle Photo Upload
+        inputs.photo.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    previews.photo.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Add Input Listeners
+        Object.values(inputs).forEach(input => {
+            if (input) {
+                input.addEventListener('input', updatePreview);
+            }
+        });
+
+        // Modal Controls
+        function showAccountModal() {
+            document.getElementById('modalAccountText').textContent = inputs.account.value;
+            document.getElementById('accountModal').classList.remove('hidden');
+        }
+
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.add('hidden');
+        }
+
+        function copyAccount() {
+            navigator.clipboard.writeText(inputs.account.value);
+            alert('계좌번호가 복사되었습니다.');
+            closeAccountModal();
+        }
+
+        // Sharing Handlers
+        function shareKakao() {
+            const text = `[부고]\n故 ${inputs.deceasedName.value}님께서 별세하셨기에 알립니다.\n\n- 장례식장: ${inputs.hallName.value}\n- 발인: ${previews.balinFull.textContent}\n- 상주: ${inputs.mourner.value}`;
+            navigator.clipboard.writeText(text);
+            alert('부고 문구가 복사되었습니다. 원하시는 메시지창에 붙여넣기 하여 전달하세요.');
+        }
+
+        function copySMS() {
+            shareKakao();
+        }
+
+        // Download Preview as Image
+        function downloadPreview() {
+            const target = document.getElementById('mobilePreview');
+            html2canvas(target, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `부고장_${inputs.deceasedName.value}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // Initial Run
+        updatePreview();
     </script>
 </body>
 </html>
